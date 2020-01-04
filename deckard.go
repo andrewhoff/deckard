@@ -1,4 +1,4 @@
-package bgrunner
+package deckard
 
 import (
 	"fmt"
@@ -21,10 +21,12 @@ type BgRunnable interface {
 	Run() error
 }
 
+const defaultConcurrency = 1
+
 // NewRunner - returns an infinitely runnable BgRunner
 func NewRunner(c int, r BgRunnable, done chan os.Signal) BgRunner {
 	if c <= 0 {
-		c = 1
+		c = defaultConcurrency
 
 		maxProcs := os.Getenv("GOMAXPROCS")
 		if maxProcs != "" {
@@ -35,6 +37,8 @@ func NewRunner(c int, r BgRunnable, done chan os.Signal) BgRunner {
 
 			fmt.Printf("setting concurrency rate to GOMAXPROCS of %d\n", max)
 			c = max
+		} else {
+			fmt.Printf("GOMAXPROCS is unset, using default concurrency of %d\n", defaultConcurrency)
 		}
 	}
 
