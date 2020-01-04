@@ -2,7 +2,9 @@ package bgrunner
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -21,6 +23,21 @@ type BgRunnable interface {
 
 // NewRunner - returns an infinitely runnable BgRunner
 func NewRunner(c int, r BgRunnable, done chan os.Signal) BgRunner {
+	if c <= 0 {
+		c = 1
+
+		maxProcs := os.Getenv("GOMAXPROCS")
+		if maxProcs != "" {
+			max, err := strconv.Atoi(maxProcs)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("setting concurrency rate to GOMAXPROCS of %d\n", max)
+			c = max
+		}
+	}
+
 	return BgRunner{
 		Concurrency: c,
 		Runnable:    r,
@@ -44,7 +61,7 @@ func (r BgRunner) LaunchAndWait() {
 		for {
 			select {
 			case <-r.Done:
-				fmt.Println("Done!")
+				fmt.Println("cleaning up....")
 				return // TODO: cleanup goroutines
 			default:
 				go func() {
